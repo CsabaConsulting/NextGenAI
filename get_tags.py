@@ -17,6 +17,13 @@ def hello_http(request):
     request_json = request.get_json(silent=True)
     request_args = request.args
 
+    if request_json and 'user_id' in request_json:
+        user_id = request_json['user_id']
+    elif request_args and 'user_id' in request_args:
+        user_id = request_args['user_id']
+    else:
+        user_id = '1'
+
     if request_json and 'start_date' in request_json:
         start_date = request_json['start_date']
     elif request_args and 'start_date' in request_args:
@@ -31,17 +38,22 @@ def hello_http(request):
     else:
         end_date = date.today().isoformat()
 
-    print(start_date, end_date)
-
     client = bq.Client(project='gdg-demos')
 
-    # Perform a query.
     QUERY = (
-        "SELECT DISTINCT(tg.tag) AS tag FROM `gdg-demos.images.images` AS im "
-        "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
-        "WHERE datetime BETWEEN '2023-09-19' AND '2023-09-20' ORDER BY tg.tag;"
+      "SELECT DISTINCT(tg.tag) AS tag FROM `gdg-demos.images.images` AS im "
+      "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
+      "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
+      "ORDER BY tg.tag;"
     )
-    query_job = client.query(QUERY)
-    rows = query_job.result()  # Waits for query to finish
+    job_config = bq.QueryJobConfig(
+      query_parameters=[
+        bq.ScalarQueryParameter("user_id", "STRING", user_id),
+        bq.ScalarQueryParameter("start_date", "STRING", start_date),
+        bq.ScalarQueryParameter("end_date", "STRING", end_date),
+      ]
+    )
+    query_job = client.query(QUERY, job_config=job_config)
+    rows = query_job.result()
     tags = [row.tag for row in rows]
     return jsonify(tags)
