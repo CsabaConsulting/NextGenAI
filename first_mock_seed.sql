@@ -6,23 +6,23 @@ INSERT INTO `gdg-demos.images.images` (user_id, album_id, image_id, datetime, de
 VALUES ('1', '2', '2', '2023-09-20',
 "The image depicts a stunning and grandiose architectural structure, possibly a palace or a government building, situated near a serene body of water at night. The building is adorned with intricate details, such as multiple towers and spires, which give it a regal and majestic appearance. The illumination of the building creates a warm and inviting ambiance, casting a soft glow on the surrounding water. The reflection of the building's lights on the water adds an extra layer of beauty to the scene, creating a sense of harmony between the structure and its natural surroundings. The calmness of the water further enhances the tranquility of the scene, providing a sense of peacefulness and serenity. The overall atmosphere of the image is one of grandeur, beauty, and tranquility, making it a captivating and visually appealing representation of a cityscape at night. The building in the image is likely the Hungarian Parliament Building, which is a famous landmark in Budapest, Hungary. The Parliament Building is a grandiose structure with multiple towers and spires, and it is illuminated at night, creating a beautiful and impressive sight on the banks of the Danube River.");
 
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Paris');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'France');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Eiffel Tower');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Overcast');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Clouds');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Trees');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Fountains');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Dramatic');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Grandiose');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Water');
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Paris', 0);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'France', 1);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Eiffel Tower', 2);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Overcast', 3);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Clouds', 4);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Trees', 5);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Fountains', 6);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Dramatic', 7);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Grandiose', 8);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('1', 'Water', 9);
 
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Budapest');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Hungary');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Cityscape');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Nighttime');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Water');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Serene');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Peaceful');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Majestic');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Grandiose');
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Budapest', 0);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Hungary', 1);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Cityscape', 2);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Nighttime', 3);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Water', 4);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Serene', 5);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Peaceful', 6);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Majestic', 7);
+INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES ('2', 'Grandiose', 8);
