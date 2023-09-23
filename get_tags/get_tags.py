@@ -60,14 +60,15 @@ def get_categories(request):
     all_tags = set()
     for row in rows:
         if row.image_id not in tags:
-            tags[row.image_id] = set(row.tag)
+            tags[row.image_id] = set({row.tag})
         else:
             tags[row.image_id].add(row.tag)
 
         all_tags.add(row.tag)
 
-    for iamge_id, tgs in tags.items():
-        tags[image_id] = list(tgs).sort()
+    print(tags)
+    for image_id, tgs in tags.items():
+        tags[image_id] = sorted(list(tgs))
 
-    tags["all_tags"] = list(all_tags).sort()
+    tags["all_tags"] = sorted(list(all_tags))
     return jsonify(tags)
