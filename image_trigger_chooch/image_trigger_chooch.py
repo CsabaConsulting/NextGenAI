@@ -103,7 +103,7 @@ def hello_http(request):
     tags_json_data = json.loads(tags_response.content)
     tags = tags_json_data["prediction_keywords"]
 
-    TAGS_QUERY = "INSERT INTO `gdg-demos.images.tags` (image_id, tag, rank) VALUES "
+    TAGS_QUERY = "INSERT INTO `gdg-demos.images.tags` (image_id, tag, priority) VALUES "
     query_parameters=[]
     for index, tag in enumerate(tags):
       TAGS_QUERY += f"('@image_id_{index}', '{tag}', {index})"
