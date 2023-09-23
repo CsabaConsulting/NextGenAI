@@ -61,6 +61,13 @@ def journal_entries(request):
     else:
         journal_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry about the experiences depicted. Don't recite the image descriptions, sumamruze what depicted."
 
+    if request_json and 'temperature' in request_json:
+        temperature = request_json['temperature']
+    elif request_args and 'temperature' in request_args:
+        temperature = request_args['temperature']
+    else:
+        temperature = 0.2
+
     MAKERSUITE_API_KEY = "***"
     palm.configure(api_key=MAKERSUITE_API_KEY)
     models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
@@ -92,7 +99,7 @@ def journal_entries(request):
       title_completion = palm.generate_text(
         model=model,
         prompt=title_prompt.format(image_descriptions),
-        temperature=0.5,
+        temperature=temperature,
         max_output_tokens=800,
       )
 
@@ -101,7 +108,7 @@ def journal_entries(request):
       journal_completion = palm.generate_text(
         model=model,
         prompt=journal_prompt.format(image_descriptions),
-        temperature=0.2,
+        temperature=temperature,
         max_output_tokens=800,
       )
 
