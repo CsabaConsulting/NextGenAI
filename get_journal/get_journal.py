@@ -6,7 +6,7 @@ import requests
 from datetime import date
 from flask import jsonify
 
-async def llm_result(model, prompt, temperature, max_output_tokens, tag, task_type):
+async def llm_result(model, prompt, temperature, max_output_tokens, tag, image_id, task_type):
     completion = palm.generate_text(
         model=model,
         prompt=prompt,
@@ -14,9 +14,12 @@ async def llm_result(model, prompt, temperature, max_output_tokens, tag, task_ty
         max_output_tokens=max_output_tokens,
     )
 
-    return dict(tag=tag, task_type=task_type, text=completion.result.strip())
+    if tag:
+        return dict(tag=tag, task_type=task_type, text=completion.result.strip())
 
-async def journal_entry(user_id, start_date, end_date, tag, model, title_prompt, journal_prompt, temperature):
+    return dict(image_id=image_id, task_type=task_type, text=completion.result.strip())
+
+async def journal_entry_per_tag(user_id, start_date, end_date, tag, model, title_prompt, journal_prompt, temperature):
     QUERY = (
         "SELECT description FROM `gdg-demos.images.images` AS im "
         "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
@@ -42,8 +45,8 @@ async def journal_entry(user_id, start_date, end_date, tag, model, title_prompt,
         image_descriptions += "{}. {}".format(index, row.description)
 
     tasks = [
-        llm_result(model, title_prompt.format(image_descriptions), temperature, 800, tag, "title"),
-        llm_result(model, journal_prompt.format(image_descriptions), temperature, 800, tag, "journal")
+        llm_result(model, title_prompt.format(image_descriptions), temperature, 800, tag, None, "title"),
+        llm_result(model, journal_prompt.format(image_descriptions), temperature, 800, tag, None, "journal")
     ]
     tasks_outputs = await asyncio.gather(*tasks)
     journal_entry = dict(tag=tag, title="", entry="")
@@ -55,7 +58,22 @@ async def journal_entry(user_id, start_date, end_date, tag, model, title_prompt,
 
     return journal_entry
 
-async def journal_entries_core(request):
+async def journal_entry_for_image(image_description, image_id, image_datetime, model, title_prompt, journal_prompt, temperature):
+    tasks = [
+        llm_result(model, title_prompt.format(image_description), temperature, 800, None, image_id, "title"),
+        llm_result(model, journal_prompt.format(image_description), temperature, 800, None, image_id, "journal")
+    ]
+    tasks_outputs = await asyncio.gather(*tasks)
+    journal_entry = dict(image_id=image_id, datetime=image_datetime, title="", entry="")
+    for task_output in tasks_outputs:
+        if task_output["task_type"] == "title":
+            journal_entry["title"] = task_output["text"]
+        elif task_output["task_type"] == "journal":
+            journal_entry["entry"] = task_output["text"]
+
+    return journal_entry
+
+async def journal_entries_core(request, per_image):
     """HTTP Cloud Function.
     Args:
         request (flask.Request): The request object.
@@ -101,14 +119,20 @@ async def journal_entries_core(request):
     elif request_args and 'title_prompt' in request_args:
         title_prompt = request_args['title_prompt']
     else:
-        title_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a short, one line journal entry title"
+        if per_image:
+            title_prompt = "Description of an image taken during a journey: {}. Given that description generate a short, one line journal entry title"
+        else:
+            title_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a short, one line journal entry title"
 
     if request_json and 'journal_prompt' in request_json:
         journal_prompt = request_json['journal_prompt']
     elif request_args and 'journal_prompt' in request_args:
         journal_prompt = request_args['journal_prompt']
     else:
-        journal_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry about the experiences depicted. Try to not recite the image descriptions verbatim."
+        if per_image:
+            journal_prompt = "Description of an image taken during a journey: {}. Given that description generate a journal entry about the experience depicted. Try to not recite the image description verbatim."
+        else:
+            journal_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry about the experiences depicted. Try to not recite the image descriptions verbatim."
 
     if request_json and 'temperature' in request_json:
         temperature = request_json['temperature']
@@ -122,17 +146,39 @@ async def journal_entries_core(request):
     models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
     model = models[0].name
 
-    journal_entries = []
     tasks = []
-    for tag in tags:
-        tasks.append(journal_entry(user_id, start_date, end_date, tag, model, title_prompt, journal_prompt, temperature))
+    if per_image:
+        QUERY = (
+            "SELECT im.image_id, im.description, im.datetime FROM `gdg-demos.images.images` AS im "
+            "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
+            "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
+            "AND tg.tag IN UNNEST(@tags) ORDER BY im.datetime, im.image_id;"
+        )
+        job_config = bq.QueryJobConfig(
+            query_parameters=[
+                bq.ScalarQueryParameter("user_id", "STRING", user_id),
+                bq.ScalarQueryParameter("start_date", "STRING", start_date),
+                bq.ScalarQueryParameter("end_date", "STRING", end_date),
+                bq.ArrayQueryParameter("tags", "STRING", tags),
+            ]
+        )
+        client = bq.Client(project='gdg-demos')
+        query_job = client.query(QUERY, job_config=job_config)
+        rows = query_job.result()
+        for row in rows:
+            print(row.image_id, row.description, row.datetime)
+            tasks.append(journal_entry_for_image(row.image_id, row.description, row.datetime, model, title_prompt, journal_prompt, temperature))
+    else:
+        for tag in tags:
+            tasks.append(journal_entry_per_tag(user_id, start_date, end_date, tag, model, title_prompt, journal_prompt, temperature))
 
     tasks_outputs = await asyncio.gather(*tasks)
+    journal = []
     for task_output in tasks_outputs:
         if task_output:
-            journal_entries.append(task_output)
+            journal.append(task_output)
 
-    return jsonify(dict(data=journal_entries))
+    return jsonify(dict(data=journal))
 
 @functions_framework.http
 def journal_entries(request):
@@ -145,4 +191,4 @@ def journal_entries(request):
         Response object using `make_response`
         <https://flask.palletsprojects.com/en/1.1.x/api/#flask.make_response>.
     """
-    return asyncio.run(journal_entries_core(request))
+    return asyncio.run(journal_entries_core(request, True))
