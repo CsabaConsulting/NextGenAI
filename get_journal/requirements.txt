@@ -1,4 +1,5 @@
 functions-framework==3.*
+nest-asyncio
 google-cloud-bigquery
 google-generativeai
 requests

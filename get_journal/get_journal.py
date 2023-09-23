@@ -1,11 +1,61 @@
+import asyncio
 import functions_framework
 import google.cloud.bigquery as bq
 import google.generativeai as palm
+import requests
 from datetime import date
 from flask import jsonify
 
-@functions_framework.http
-def journal_entries(request):
+async def llm_result(model, prompt, temperature, max_output_tokens, tag, task_type):
+    completion = palm.generate_text(
+        model=model,
+        prompt=prompt,
+        temperature=temperature,
+        max_output_tokens=max_output_tokens,
+    )
+
+    return dict(tag=tag, task_type=task_type, text=completion.result.strip())
+
+async def journal_entry(user_id, start_date, end_date, tag, model, title_prompt, journal_prompt, temperature):
+    QUERY = (
+        "SELECT description FROM `gdg-demos.images.images` AS im "
+        "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
+        "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
+        "AND tg.tag = @tag ORDER BY im.datetime;"
+    )
+    job_config = bq.QueryJobConfig(
+        query_parameters=[
+            bq.ScalarQueryParameter("user_id", "STRING", user_id),
+            bq.ScalarQueryParameter("start_date", "STRING", start_date),
+            bq.ScalarQueryParameter("end_date", "STRING", end_date),
+            bq.ScalarQueryParameter("tag", "STRING", tag),
+        ]
+    )
+    client = bq.Client(project='gdg-demos')
+    query_job = client.query(QUERY, job_config=job_config)
+    rows = query_job.result()
+    if not rows:
+        return {}
+
+    image_descriptions = ""
+    for index, row in enumerate(rows):
+        image_descriptions += "{}. {}".format(index, row.description)
+
+    tasks = [
+        llm_result(model, title_prompt.format(image_descriptions), temperature, 800, tag, "title"),
+        llm_result(model, journal_prompt.format(image_descriptions), temperature, 800, tag, "journal")
+    ]
+    tasks_outputs = await asyncio.gather(*tasks)
+    journal_entry = dict(tag=tag, title="", entry="")
+    for task_output in tasks_outputs:
+        if task_output["task_type"] == "title":
+            journal_entry["title"] = task_output["text"]
+        elif task_output["task_type"] == "journal":
+            journal_entry["entry"] = task_output["text"]
+
+    return journal_entry
+
+async def journal_entries_core(request):
     """HTTP Cloud Function.
     Args:
         request (flask.Request): The request object.
@@ -72,56 +122,27 @@ def journal_entries(request):
     models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
     model = models[0].name
 
-    client = bq.Client(project='gdg-demos')
     journal_entries = []
+    tasks = []
     for tag in tags:
-      QUERY = (
-        "SELECT description FROM `gdg-demos.images.images` AS im "
-        "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
-        "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
-        "AND tg.tag = @tag ORDER BY im.datetime;"
-      )
-      job_config = bq.QueryJobConfig(
-        query_parameters=[
-          bq.ScalarQueryParameter("user_id", "STRING", user_id),
-          bq.ScalarQueryParameter("start_date", "STRING", start_date),
-          bq.ScalarQueryParameter("end_date", "STRING", end_date),
-          bq.ScalarQueryParameter("tag", "STRING", tag),
-        ]
-      )
-      query_job = client.query(QUERY, job_config=job_config)
-      rows = query_job.result()
-      if not rows:
-        continue
+        tasks.append(journal_entry(user_id, start_date, end_date, tag, model, title_prompt, journal_prompt, temperature))
 
-      image_descriptions = ""
-      for index, row in enumerate(rows):
-        image_descriptions += "{}. {}".format(index, row.description)
-
-      title_completion = palm.generate_text(
-        model=model,
-        prompt=title_prompt.format(image_descriptions),
-        temperature=temperature,
-        max_output_tokens=800,
-      )
-
-      title = title_completion.result.strip()
-
-      journal_completion = palm.generate_text(
-        model=model,
-        prompt=journal_prompt.format(image_descriptions),
-        temperature=temperature,
-        max_output_tokens=800,
-      )
-
-      journal = journal_completion.result.strip()
-
-      journal_entries.append(
-        dict(
-          tag=tag,
-          title=title,
-          entry=journal
-        )
-      )
+    tasks_outputs = await asyncio.gather(*tasks)
+    for task_output in tasks_outputs:
+        if task_output:
+            journal_entries.append(task_output)
 
     return jsonify(dict(data=journal_entries))
+
+@functions_framework.http
+def journal_entries(request):
+    """HTTP Cloud Function.
+    Args:
+        request (flask.Request): The request object.
+        <https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data>
+    Returns:
+        The response text, or any set of values that can be turned into a
+        Response object using `make_response`
+        <https://flask.palletsprojects.com/en/1.1.x/api/#flask.make_response>.
+    """
+    return asyncio.run(journal_entries_core(request))
