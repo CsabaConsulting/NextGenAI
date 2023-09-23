@@ -1,0 +1,5 @@
+functions-framework==3.*
+base64
+json
+requests
+urllib
