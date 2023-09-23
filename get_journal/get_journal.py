@@ -89,11 +89,9 @@ def journal_entries(request):
       for index, row in enumerate(rows):
         image_descriptions += "{}. {}".format(index, row.description)
 
-      prompt = prompt.format(image_descriptions)
-
       title_completion = palm.generate_text(
         model=model,
-        prompt=title_prompt,
+        prompt=title_prompt.format(image_descriptions),
         temperature=0.5,
         max_output_tokens=800,
       )
@@ -102,7 +100,7 @@ def journal_entries(request):
 
       journal_completion = palm.generate_text(
         model=model,
-        prompt=journal_prompt,
+        prompt=journal_prompt.format(image_descriptions),
         temperature=0.5,
         max_output_tokens=800,
       )
