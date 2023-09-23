@@ -1,7 +1,6 @@
 import functions_framework
 import google.cloud.bigquery as bq
 import google.generativeai as palm
-import requests
 from datetime import date
 from flask import jsonify
 
@@ -92,6 +91,9 @@ def journal_entries(request):
       )
       query_job = client.query(QUERY, job_config=job_config)
       rows = query_job.result()
+      if not rows:
+        continue
+
       image_descriptions = ""
       for index, row in enumerate(rows):
         image_descriptions += "{}. {}".format(index, row.description)
