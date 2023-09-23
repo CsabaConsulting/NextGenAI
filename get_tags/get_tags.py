@@ -41,11 +41,11 @@ def get_categories(request):
     client = bq.Client(project='gdg-demos')
 
     QUERY = (
-      "SELECT im.image_id, tg.tag FROM `gdg-demos.images.images` AS im "
+      "SELECT im.image_id, tg.tag, tg.priority FROM `gdg-demos.images.images` AS im "
       "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
       "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
-      "GROUP BY im.datetime, tg.tag, im.image_id "
-      "ORDER BY im.datetime;"
+      "GROUP BY im.image_id, tg.tag, tg.priority "
+      "ORDER BY im.image_id, tg.priority;"
     )
     job_config = bq.QueryJobConfig(
       query_parameters=[
