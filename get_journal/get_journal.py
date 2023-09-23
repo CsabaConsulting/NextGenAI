@@ -58,7 +58,7 @@ def journal_entries(request):
     elif request_args and 'journal_prompt' in request_args:
         journal_prompt = request_args['journal_prompt']
     else:
-        journal_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry about the experiences depicted. Don't recite the image descriptions, sumamruze what depicted."
+        journal_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry about the experiences depicted. Try to not recite the image descriptions verbatim."
 
     if request_json and 'temperature' in request_json:
         temperature = request_json['temperature']
