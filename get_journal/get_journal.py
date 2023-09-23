@@ -101,7 +101,7 @@ def journal_entries(request):
       journal_completion = palm.generate_text(
         model=model,
         prompt=journal_prompt.format(image_descriptions),
-        temperature=0.5,
+        temperature=0.2,
         max_output_tokens=800,
       )
 
