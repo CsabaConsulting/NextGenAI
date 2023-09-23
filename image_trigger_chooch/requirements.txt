@@ -1,5 +1,6 @@
 functions-framework==3.*
 base64
+google-cloud-bigquery
 json
 requests
 urllib

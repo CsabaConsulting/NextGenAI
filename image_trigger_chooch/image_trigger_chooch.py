@@ -14,6 +14,13 @@ def hello_http(request):
     request_json = request.get_json(silent=True)
     request_args = request.args
 
+    if request_json and 'user_id' in request_json:
+        user_id = request_json['user_id']
+    elif request_args and 'user_id' in request_args:
+        user_id = request_args['user_id']
+    else:
+        user_id = '1'
+
     if request_json and 'image_id' in request_json:
         image_id = request_json['image_id']
     elif request_args and 'image_id' in request_args:
@@ -21,7 +28,13 @@ def hello_http(request):
     else:
         return jsonify({})
 
-    image_file = None
+    if request_json and 'date_time' in request_json:
+        date_time = request_json['date_time']
+    elif request_args and 'date_time' in request_args:
+        date_time = request_args['date_time']
+    else:
+        date_time = datetime.datetime.utcnow().isoformat()
+
     if request_json and 'image_url' in request_json:
         image_url = request_json['image_url']
     elif request_args and 'image_url' in request_args:
@@ -46,10 +59,10 @@ def hello_http(request):
     # Chooch ImageChat-3 model_id
     model_id_image_chat_pt = "ad420c2a-d565-48eb-b963-a8297a0e4000"
     CHOOCH_API_KEY = "***"
-    url = "https://apiv2.chooch.ai/predict?api_key={}".format(api_key)
+    url = f"https://apiv2.chooch.ai/predict?api_key={CHOOCH_API_KEY}"
 
     description_payload = dict(
-        base64str=base64_string,
+        base64str=image_base64,
         model_id=model_id_image_chat_pt,
         parameters=dict(
             deep_inference=True,
@@ -61,8 +74,24 @@ def hello_http(request):
     description_json_data = json.loads(description_response.content)
     description = description_json_data["predictions"][0]["class_title"]
 
+    client = bq.Client(project='gdg-demos')
+
+    DESCRIPTION_QUERY = (
+      "INSERT INTO `gdg-demos.images.images` (user_id, image_id, datetime, description)"
+      "VALUES ('@user_id', '@image_id', '@date_time', '@description';"
+    )
+    description_job_config = bq.QueryJobConfig(
+      query_parameters=[
+        bq.ScalarQueryParameter("user_id", "STRING", user_id),
+        bq.ScalarQueryParameter("image_id", "STRING", image_id),
+        bq.ScalarQueryParameter("date_time", "STRING", date_time),
+        bq.ScalarQueryParameter("description", "STRING", description),
+      ]
+    )
+    client.query(DESCRIPTION_QUERY, job_config=description_job_config)
+
     tags_payload = dict(
-        base64str=base64_string,
+        base64str=image_base64,
         model_id=model_id_image_chat_pt,
         parameters=dict(
             deep_inference=True,
@@ -74,5 +103,18 @@ def hello_http(request):
     tags_json_data = json.loads(tags_response.content)
     tags = tags_json_data["prediction_keywords"]
 
+    TAGS_QUERY = "INSERT INTO `gdg-demos.images.tags` (image_id, tag, rank) VALUES "
+    query_parameters=[]
+    for index, tag in enumerate(tags):
+      TAGS_QUERY += f"('@image_id_{index}', '{tag}', {index})"
+      if index == len(tags) - 1:
+        TAGS_QUERY += ";"
+      else:
+        TAGS_QUERY += ", "
 
-    return 'Hello {}!'.format(name)
+      query_parameters.append(bq.ScalarQueryParameter(f"image_id_{index}", "STRING", image_id))
+
+    tags_job_config = bq.QueryJobConfig(query_parameters=query_parameters)
+    client.query(TAGS_QUERY, job_config=tags_job_config)
+
+    return 'OK'
