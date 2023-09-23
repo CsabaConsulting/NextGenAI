@@ -56,19 +56,35 @@ def get_categories(request):
     )
     query_job = client.query(QUERY, job_config=job_config)
     rows = query_job.result()
-    tags = dict()
+    tags = list()
     all_tags = set()
+    current_image_id = ""
+    current_image = None
     for row in rows:
-        if row.image_id not in tags:
-            tags[row.image_id] = set({row.tag})
+        if current_image_id == "" or current_image_id != row.image_id:
+            if current_image_id != "":
+                current_image["tags"] = sorted(list(current_image["tags"]))
+                tags.append(current_image)
+
+            current_image_id = row.image_id
+            current_image = dict(
+                image_id=current_image_id,
+                tags=set({row.tag})
+            )
         else:
-            tags[row.image_id].add(row.tag)
+            current_image["tags"].add(row.tag)
 
         all_tags.add(row.tag)
 
-    print(tags)
-    for image_id, tgs in tags.items():
-        tags[image_id] = sorted(list(tgs))
+    if not tags or tags[-1]["image_id"] != current_image_id:
+        current_image["tags"] = sorted(list(current_image["tags"]))
+        tags.append(current_image)
 
-    tags["all_tags"] = sorted(list(all_tags))
+    tags.append(
+        dict(
+            image_id="all_tags",
+            tags=sorted(list(all_tags))
+        )
+    )
+
     return jsonify(tags)
