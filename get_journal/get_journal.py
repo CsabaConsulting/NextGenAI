@@ -52,7 +52,7 @@ def journal_entries(request):
     elif request_args and 'title_prompt' in request_args:
         title_prompt = request_args['title_prompt']
     else:
-        title_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry title"
+        title_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a short, one line journal entry title"
 
     if request_json and 'journal_prompt' in request_json:
         journal_prompt = request_json['journal_prompt']
