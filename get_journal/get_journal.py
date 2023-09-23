@@ -81,7 +81,7 @@ def journal_entries(request):
       rows = query_job.result()
       image_descriptions = ""
       for index, row in enumerate(rows):
-        image_descriptions += "{}. {}".format(index, row.description)
+        image_descriptions += f"{index}. {row.description}"
 
       prompt = prompt.format(image_descriptions)
 
