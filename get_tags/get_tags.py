@@ -4,7 +4,7 @@ from datetime import date
 from flask import jsonify
 
 @functions_framework.http
-def hello_http(request):
+def get_categories(request):
     """HTTP Cloud Function.
     Args:
         request (flask.Request): The request object.
@@ -41,10 +41,11 @@ def hello_http(request):
     client = bq.Client(project='gdg-demos')
 
     QUERY = (
-      "SELECT DISTINCT(tg.tag) AS tag FROM `gdg-demos.images.images` AS im "
+      "SELECT im.image_id, tg.tag FROM `gdg-demos.images.images` AS im "
       "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
       "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
-      "ORDER BY tg.tag;"
+      "GROUP BY im.datetime, tg.tag, im.image_id "
+      "ORDER BY im.datetime;"
     )
     job_config = bq.QueryJobConfig(
       query_parameters=[
@@ -55,5 +56,18 @@ def hello_http(request):
     )
     query_job = client.query(QUERY, job_config=job_config)
     rows = query_job.result()
-    tags = [row.tag for row in rows]
+    tags = dict()
+    all_tags = set()
+    for row in rows:
+        if row.image_id not in tags:
+            tags[row.image_id] = set(row.tag)
+        else:
+            tags[row.image_id].add(row.tag)
+
+        all_tags.add(row.tag)
+
+    for iamge_id, tgs in tags.items():
+        tags[image_id] = list(tgs).sort()
+
+    tags["all_tags"] = list(all_tags).sort()
     return jsonify(tags)
