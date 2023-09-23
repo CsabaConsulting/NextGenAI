@@ -47,20 +47,26 @@ def journal_entries(request):
     else:
         return jsonify({})
 
-    client = bq.Client(project='gdg-demos')
-
-    if request_json and 'prompt' in request_json:
-        prompt = request_json['prompt']
-    elif request_args and 'prompt' in request_args:
-        prompt = request_args['prompt']
+    if request_json and 'title_prompt' in request_json:
+        title_prompt = request_json['title_prompt']
+    elif request_args and 'title_prompt' in request_args:
+        title_prompt = request_args['title_prompt']
     else:
-        prompt = "Given the following images taken about an experience: {} generate a funny poem about the experience in the style of Shakespeare"
+        title_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry title"
+
+    if request_json and 'journal_prompt' in request_json:
+        journal_prompt = request_json['journal_prompt']
+    elif request_args and 'journal_prompt' in request_args:
+        journal_prompt = request_args['journal_prompt']
+    else:
+        journal_prompt = "Descriptions of images taken of a journey: {}. Given these images generate a journal entry about the experiences depicted. Don't recite the image descriptions, sumamruze what depicted."
 
     MAKERSUITE_API_KEY = "***"
     palm.configure(api_key=MAKERSUITE_API_KEY)
     models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
     model = models[0].name
 
+    client = bq.Client(project='gdg-demos')
     journal_entries = []
     for tag in tags:
       QUERY = (
@@ -81,32 +87,34 @@ def journal_entries(request):
       rows = query_job.result()
       image_descriptions = ""
       for index, row in enumerate(rows):
-        image_descriptions += f"{index}. {row.description}"
+        image_descriptions += "{}. {}".format(index, row.description)
 
       prompt = prompt.format(image_descriptions)
 
-      # palm2_url = "https://generativelanguage.googleapis.com/v1beta3/models/text-bison-001:generateText"
-      # params = dict(prompt=dict(text=prompt))
-      # headers = {
-      #     "Content-Type": "application/json",
-      #     "x-goog-api-key": MAKERSUITE_API_KEY,
-      # }
-      # llm_response = requests.get(url=palm2_url, data=PARAMS, headers=headers, verify=False)
-      # data = llm_response.json()
-
-      completion = palm.generate_text(
+      title_completion = palm.generate_text(
         model=model,
-        prompt=prompt,
+        prompt=title_prompt,
         temperature=0.5,
         max_output_tokens=800,
       )
 
+      title = title_completion.result.strip()
+
+      journal_completion = palm.generate_text(
+        model=model,
+        prompt=journal_prompt,
+        temperature=0.5,
+        max_output_tokens=800,
+      )
+
+      journal = journal_completion.result.strip()
+
       journal_entries.append(
         dict(
           tag=tag,
-          entry=completion.result
+          title=title,
+          entry=journal
         )
       )
 
     return jsonify(dict(data=journal_entries))
-
