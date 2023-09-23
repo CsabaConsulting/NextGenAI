@@ -76,7 +76,7 @@ def get_categories(request):
 
         all_tags.add(row.tag)
 
-    if not tags or tags[-1]["image_id"] != current_image_id:
+    if (not tags or tags[-1]["image_id"] != current_image_id) and current_image:
         current_image["tags"] = sorted(list(current_image["tags"]))
         tags.append(current_image)
 
