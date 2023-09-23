@@ -14,7 +14,7 @@ INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Clouds');
 INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Trees');
 INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Fountains');
 INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Dramatic');
-INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Grandiose');
+INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('1', 'Grandiose');
 
 INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Budapest');
 INSERT INTO `gdg-demos.images.tags` (image_id, tag) VALUES ('2', 'Hungary');
