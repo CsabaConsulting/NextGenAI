@@ -58,7 +58,7 @@ async def journal_entry_per_tag(user_id, start_date, end_date, tag, model, title
 
     return journal_entry
 
-async def journal_entry_for_image(image_description, image_id, image_datetime, model, title_prompt, journal_prompt, temperature):
+async def journal_entry_for_image(image_id, image_description, image_datetime, model, title_prompt, journal_prompt, temperature):
     tasks = [
         llm_result(model, title_prompt.format(image_description), temperature, 800, None, image_id, "title"),
         llm_result(model, journal_prompt.format(image_description), temperature, 800, None, image_id, "journal")
@@ -149,7 +149,7 @@ async def journal_entries_core(request, per_image):
     tasks = []
     if per_image:
         QUERY = (
-            "SELECT im.image_id, im.description, im.datetime FROM `gdg-demos.images.images` AS im "
+            "SELECT DISTINCT(im.image_id), im.description, im.datetime FROM `gdg-demos.images.images` AS im "
             "JOIN `gdg-demos.images.tags` AS tg ON im.image_id = tg.image_id "
             "WHERE im.user_id = @user_id AND datetime BETWEEN @start_date AND @end_date "
             "AND tg.tag IN UNNEST(@tags) ORDER BY im.datetime, im.image_id;"
@@ -166,7 +166,6 @@ async def journal_entries_core(request, per_image):
         query_job = client.query(QUERY, job_config=job_config)
         rows = query_job.result()
         for row in rows:
-            print(row.image_id, row.description, row.datetime)
             tasks.append(journal_entry_for_image(row.image_id, row.description, row.datetime, model, title_prompt, journal_prompt, temperature))
     else:
         for tag in tags:
