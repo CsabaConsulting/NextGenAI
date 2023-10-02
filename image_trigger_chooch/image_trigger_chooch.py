@@ -66,7 +66,7 @@ def hello_http(request):
         model_id=model_id_image_chat_pt,
         parameters=dict(
             deep_inference=True,
-            prompt=""
+            prompt="Describe the image in the greatest detail possible"
         ),
     )
 
