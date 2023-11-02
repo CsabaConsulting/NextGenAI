@@ -1,9 +1,14 @@
 import base64
+import datetime
 import functions_framework
+import google.cloud.bigquery as bq
 import io
 import json
 import os
+import requests
 import urllib.request
+
+from flask import jsonify
 
 @functions_framework.http
 def hello_http(request):
