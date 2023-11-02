@@ -2,7 +2,7 @@ import asyncio
 import functions_framework
 import google.cloud.bigquery as bq
 import google.generativeai as palm
-import requests
+
 from datetime import date
 from flask import jsonify
 
