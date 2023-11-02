@@ -66,12 +66,6 @@ def hello_http(request):
 
         byte_content = base64.b64decode(image_base64)
 
-    # Chooch ImageChat-3 model_id
-    model_id_image_chat = "chooch-image-chat-3"
-    CHOOCH_API_KEY = os.getenv("CHOOCH_API_KEY") or "CHOOCH_API_KEY"
-    host_name = "https://chat-api.chooch.ai"
-    url = f"{host_name}/predict?api_key={CHOOCH_API_KEY}"
-
     parameters = dict(
         parameters=dict(
             deep_inference=True,
@@ -83,9 +77,12 @@ def hello_http(request):
     payload = dict(data=parameters_json)
     file_param = dict(file=('image.jpg', io.BytesIO(byte_content)))
 
+    # Chooch ImageChat-3 model_id
+    model_id_image_chat = "chooch-image-chat-3"
+    CHOOCH_API_KEY = os.getenv("CHOOCH_API_KEY") or "CHOOCH_API_KEY"
     host_name = "https://chat-api.chooch.ai"
-    url = "{}/predict?api_key={}".format(host_name, api_key)
-    #-- url = "{}/predict_image_chat?api_key={}".format(host_name, api_key)
+    url = f"{host_name}/predict?api_key={CHOOCH_API_KEY}"
+    #-- url = f"{host_name}/predict_image_chat?api_key={CHOOCH_API_KEY}"
     description_response = requests.post(url, data=payload, files=file_param)
     description_json_data = json.loads(description_response.content)
     description = description_json_data["predictions"][0]["class_title"]
