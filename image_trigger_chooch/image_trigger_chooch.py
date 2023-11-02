@@ -1,7 +1,8 @@
 import base64
+import functions_framework
 import io
 import json
-import functions_framework
+import os
 import urllib.request
 
 @functions_framework.http
@@ -62,7 +63,7 @@ def hello_http(request):
 
     # Chooch ImageChat-3 model_id
     model_id_image_chat = "chooch-image-chat-3"
-    CHOOCH_API_KEY = "***"
+    CHOOCH_API_KEY = os.getenv("CHOOCH_API_KEY") or "CHOOCH_API_KEY"
     host_name = "https://chat-api.chooch.ai"
     url = f"{host_name}/predict?api_key={CHOOCH_API_KEY}"
 
