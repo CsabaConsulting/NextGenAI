@@ -66,6 +66,7 @@ def hello_http(request):
 
         byte_content = base64.b64decode(image_base64)
 
+    # 1. Query the content
     parameters = dict(
         parameters=dict(
             deep_inference=True,
@@ -103,16 +104,18 @@ def hello_http(request):
     )
     client.query(DESCRIPTION_QUERY, job_config=description_job_config)
 
-    tags_payload = dict(
-        base64str=image_base64,
-        model_id=model_id_image_chat_pt,
+    # 1. Query tags
+    parameters = dict(
         parameters=dict(
             deep_inference=True,
             prompt="Identify a list of objects and entities on this photo. List as many as you can separated by commas without extra explanations in decreased importance and confidence order."
         ),
+        model_id=model_id_image_chat
     )
-
-    tags_response = requests.put(url, data=json.dumps(tags_payload))
+    parameters_json =  json.dumps(parameters)
+    tags_payload = dict(data=parameters_json)
+    file_param = dict(file=('image.jpg', io.BytesIO(byte_content)))
+    tags_response = requests.put(url, data=tags_payload, files=file_param)
     tags_json_data = json.loads(tags_response.content)
     tags = tags_json_data["prediction_keywords"]
 
