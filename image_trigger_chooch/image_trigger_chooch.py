@@ -11,7 +11,7 @@ import urllib.request
 from flask import jsonify
 
 @functions_framework.http
-def hello_http(request):
+def image_trigger_chooch(request):
     """HTTP Cloud Function.
     Args:
         request (flask.Request): The request object.
