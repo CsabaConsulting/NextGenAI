@@ -72,7 +72,7 @@ def hello_http(request):
             deep_inference=True,
             prompt="Describe the image in the greatest detail possible"
         ),
-        model_id=model_id
+        model_id=model_id_image_chat
     )
     parameters_json =  json.dumps(parameters)
     payload = dict(data=parameters_json)
