@@ -2,6 +2,7 @@ import asyncio
 import functions_framework
 import google.cloud.bigquery as bq
 import google.generativeai as palm
+import os
 
 from datetime import date
 from flask import jsonify
@@ -141,7 +142,7 @@ async def journal_entries_core(request, per_image):
     else:
         temperature = 0.2
 
-    MAKERSUITE_API_KEY = "***"
+    MAKERSUITE_API_KEY = os.getenv("MAKERSUITE_API_KEY") or "MAKERSUITE_API_KEY"
     palm.configure(api_key=MAKERSUITE_API_KEY)
     models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
     model = models[0].name
