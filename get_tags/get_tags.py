@@ -1,5 +1,6 @@
 import functions_framework
 import google.cloud.bigquery as bq
+
 from datetime import date
 from flask import jsonify
 
