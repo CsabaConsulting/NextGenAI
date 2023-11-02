@@ -1,4 +1,8 @@
+import base64
+import io
+import json
 import functions_framework
+import urllib.request
 
 @functions_framework.http
 def hello_http(request):
@@ -40,37 +44,43 @@ def hello_http(request):
     elif request_args and 'image_url' in request_args:
         image_url = request_args['image_url']
 
-    image_base64 = None
+    byte_content = None
     if image_url:
         with urllib.request.urlopen(image_url) as response:
             byte_content = response.read()
-            base64_bytes = b64encode(byte_content)
-            image_base64 = base64_bytes.decode("utf-8")
 
-    if not image_base64:
+    if not byte_content:
         if request_json and 'image_base64' in request_json:
             image_base64 = request_json['image_base64']
         elif request_args and 'image_base64' in request_args:
             image_base64 = request_args['image_base64']
 
-    if not image_base64:
-        return jsonify({})
+        if not image_base64:
+            return jsonify({})
+
+        byte_content = base64.b64decode(image_base64)
 
     # Chooch ImageChat-3 model_id
-    model_id_image_chat_pt = "ad420c2a-d565-48eb-b963-a8297a0e4000"
+    model_id_image_chat = "chooch-image-chat-3"
     CHOOCH_API_KEY = "***"
-    url = f"https://apiv2.chooch.ai/predict?api_key={CHOOCH_API_KEY}"
+    host_name = "https://chat-api.chooch.ai"
+    url = f"{host_name}/predict?api_key={CHOOCH_API_KEY}"
 
-    description_payload = dict(
-        base64str=image_base64,
-        model_id=model_id_image_chat_pt,
+    parameters = dict(
         parameters=dict(
             deep_inference=True,
             prompt="Describe the image in the greatest detail possible"
         ),
+        model_id=model_id
     )
+    parameters_json =  json.dumps(parameters)
+    payload = dict(data=parameters_json)
+    file_param = dict(file=('image.jpg', io.BytesIO(byte_content)))
 
-    description_response = requests.put(url, data=json.dumps(description_payload))
+    host_name = "https://chat-api.chooch.ai"
+    url = "{}/predict?api_key={}".format(host_name, api_key)
+    #-- url = "{}/predict_image_chat?api_key={}".format(host_name, api_key)
+    description_response = requests.post(url, data=payload, files=file_param)
     description_json_data = json.loads(description_response.content)
     description = description_json_data["predictions"][0]["class_title"]
 
